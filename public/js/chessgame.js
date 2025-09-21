@@ -4,80 +4,123 @@ const boardElement = document.querySelector(".chessboard");
 
 let draggedPiece = null;
 let sourceSquare = null;
-let playerRole = "w"; 
+let playerRole = null; // start as null until server tells us
 
 const renderBoard = () => {
-    const board = chess.board();
-    boardElement.innerHTML = "";
+  const board = chess.board();
+  boardElement.innerHTML = "";
 
-    board.forEach((row, rowIndex) => {
-        row.forEach((square, colIndex) => {
-            const squareElement = document.createElement("div");
-            squareElement.classList.add("square",
-                (rowIndex + colIndex) % 2 === 0 ? "bg-white" : "bg-gray-700",
-                "w-full", "h-full", "flex", "items-center", "justify-center"
-            );
+  board.forEach((row, rowIndex) => {
+    row.forEach((square, colIndex) => {
+      const squareElement = document.createElement("div");
+      squareElement.classList.add(
+        "square",
+        (rowIndex + colIndex) % 2 === 0 ? "bg-gray-100" : "bg-gray-400",
+        "w-full",
+        "h-full",
+        "flex",
+        "items-center",
+        "justify-center",
+        "text-2xl"
+      );
 
-            squareElement.dataset.row = rowIndex;
-            squareElement.dataset.col = colIndex;
+      squareElement.dataset.row = rowIndex;
+      squareElement.dataset.col = colIndex;
 
-            if (square) {
-                const pieceElement = document.createElement("div");
-                pieceElement.classList.add("piece", square.color === "w" ? "text-white" : "text-black");
-                pieceElement.innerText = getPieceUnicode(square); 
-                pieceElement.draggable = playerRole === square.color;
+      if (square) {
+        const pieceElement = document.createElement("div");
+        pieceElement.classList.add(
+          "piece",
+          "select-none",
+          "pointer-events-auto",
+          "text-2xl"
+        );
 
-                pieceElement.addEventListener("dragstart", (e) => {
-                    if (pieceElement.draggable) {
-                        draggedPiece = pieceElement;
-                        sourceSquare = { row: rowIndex, col: colIndex };
-                        e.dataTransfer.setData("text/plain", "");
-                    }
-                });
+        // choose the unicode symbol based on piece
+        pieceElement.innerText = getPieceUnicode(square);
 
-                pieceElement.addEventListener("dragend", (e) => {
-                    draggedPiece = null;
-                    sourceSquare = null;
-                });
+        // draggable only if role matches piece color
+        pieceElement.draggable = playerRole === square.color;
 
-                squareElement.appendChild(pieceElement);
-            }
-
-            squareElement.addEventListener("dragover", (e) => e.preventDefault());
-
-            squareElement.addEventListener('drop', (e) => {
-                e.preventDefault();
-                if (draggedPiece) {
-                    const targetSquare = {
-                        row: parseInt(squareElement.dataset.row),
-                        col: parseInt(squareElement.dataset.col)
-                    };
-                    handleMove(sourceSquare, targetSquare);
-                }
-            });
-
-            boardElement.appendChild(squareElement);
+        pieceElement.addEventListener("dragstart", (e) => {
+          if (pieceElement.draggable) {
+            draggedPiece = pieceElement;
+            sourceSquare = { row: rowIndex, col: colIndex };
+            e.dataTransfer.setData("text/plain", "");
+          }
         });
+
+        pieceElement.addEventListener("dragend", () => {
+          draggedPiece = null;
+          sourceSquare = null;
+        });
+
+        squareElement.appendChild(pieceElement);
+      }
+
+      squareElement.addEventListener("dragover", (e) => e.preventDefault());
+
+      squareElement.addEventListener("drop", (e) => {
+        e.preventDefault();
+        if (draggedPiece && sourceSquare) {
+          const targetSquare = {
+            row: parseInt(squareElement.dataset.row),
+            col: parseInt(squareElement.dataset.col),
+          };
+          handleMove(sourceSquare, targetSquare);
+        }
+      });
+
+      boardElement.appendChild(squareElement);
     });
-}
+  });
 
-// Basic move handler
-const handleMove = ({ row: fromRow, col: fromCol }, { row: toRow, col: toCol }) => {
-    const moves = chess.moves({ verbose: true });
-    const move = moves.find(m => m.from === `${String.fromCharCode(97 + fromCol)}${8 - fromRow}` &&
-        m.to === `${String.fromCharCode(97 + toCol)}${8 - toRow}`);
-    if (move) {
-        chess.move(move.san);
-        renderBoard();
-    }
-}
+  // flip board visually for black player (you need CSS for .flipped if wanted)
+  if (playerRole === "b") {
+    boardElement.classList.add("flipped");
+  } else {
+    boardElement.classList.remove("flipped");
+  }
+};
 
-// Map pieces to Unicode symbols
+const handleMove = (source, target) => {
+  // IMPORTANT: no space between file and rank (e2, not "e 2")
+  const move = {
+    from: `${String.fromCharCode(97 + source.col)}${8 - source.row}`,
+    to: `${String.fromCharCode(97 + target.col)}${8 - target.row}`,
+    promotion: "q",
+  };
+  socket.emit("move", move);
+};
+
 const getPieceUnicode = (piece) => {
-    const symbols = {
-        p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚"
-    };
-    return piece.color === "w" ? symbols[piece.type].toUpperCase() : symbols[piece.type];
-}
+  // chess.js piece.type is lowercase (p, r, n, b, q, k)
+  const white = { p: "♙", r: "♖", n: "♘", b: "♗", q: "♕", k: "♔" };
+  const black = { p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚" };
 
+  return piece.color === "w" ? white[piece.type] : black[piece.type];
+};
+
+// socket events
+socket.on("playerRole", (role) => {
+  playerRole = role;
+  renderBoard();
+});
+
+socket.on("spectatorRole", () => {
+  playerRole = null;
+  renderBoard();
+});
+
+socket.on("boardState", (fen) => {
+  chess.load(fen);
+  renderBoard();
+});
+
+socket.on("move", (move) => {
+  chess.move(move);
+  renderBoard();
+});
+
+// initial local render (will be replaced by server boardState soon after connect)
 renderBoard();

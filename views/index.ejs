@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,23 +9,49 @@
 </head>
 
 <body>
-    <div class="w-full h-screen flex items-center justify-center bg-zinc-900">
-        <div class="chessboard w-96 h-96 bg-red-300"></div>
-    </div>
-
-
-
-
-
+    <div class="min-h-screen w-full bg-neutral-50 flex items-center justify-center p-8">
+        <div class="max-w-2xl w-full">
+          <!-- Clean header -->
+          <div class="text-center mb-8">
+            <h1 class="text-4xl font-light text-gray-800 mb-1">Tournament Chess</h1>
+            <div class="w-26 h-0.5 bg-gray-800 mx-auto"></div>
+          </div>
+          
+          <!-- Professional board container -->
+          <div class="bg-white p-8 shadow-lg border border-gray-200">
+            <!-- Player info -->
+            <div class="flex justify-between items-center mb-6 text-sm text-gray-600">
+              <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gray-800 rounded"></div>
+                <span>Player 1</span>
+                <!-- <span class="font-mono">15:00</span> -->
+              </div>
+              <div class="flex items-center space-x-3">
+                <!-- <span class="font-mono">15:00</span> -->
+                <span>Player 2</span>
+                <div class="w-8 h-8 bg-gray-300 rounded"></div>
+              </div>
+            </div>
+            
+            <!-- Clean chessboard -->
+            <div class="chessboard w-96 h-96 mx-auto bg-amber-100 border-2 border-amber-800 shadow-inner"></div>
+            
+            <!-- Move notation -->
+            <div class="mt-6 text-center">
+              <div class="text-xs text-gray-500 font-mono">Last move: e2-e4</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
 
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"
         integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous">
-        </script>
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"
         integrity="sha512-xRllwz2gdZciIB+AkEbeq+gVhX8VB8XsfqeFbUh+SzHlN96dEduwtTuVuc2u9EROlmW9+yhRlxjif66ORpsgVA=="
         crossorigin="anonymous" referrerpolicy="no-referrer">
-        </script>
+    </script>
     <script src="/js/chessgame.js"></script>
 </body>
-
 </html>
